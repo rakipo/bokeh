@@ -203,6 +203,17 @@ class Server(object):
             print("\nInterrupted, shutting down")
         self.stop()
 
+    def add_host(self, host):
+        ''' Add a new allowable host to the server after initialization.
+
+        This is mostly useful when `port=0` has been previously specified, so
+        that the the necessary value for ``server.port`` is not available
+        until after initialization.
+
+        '''
+        new_hosts = _create_hosts_whitelist([host], self._port)
+        self._tornado.add_hosts(new_hosts)
+
     _atexit_ran = False
     def _atexit(self):
         if self._atexit_ran:

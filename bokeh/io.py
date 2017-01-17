@@ -314,9 +314,12 @@ def show(obj, browser=None, new="tab", notebook_handle=False,
 def _show_notebook_app_with_state(app, _state, app_path, notebook_url):
     from IPython.display import HTML, display
     from tornado.ioloop import IOLoop
+    import logging
+    logging.basicConfig()
     loop = IOLoop.current()
-    server = Server({'/': app}, io_loop=loop, port=0, host='*',
+    server = Server({'/': app}, io_loop=loop, port=0, host=['localhost:8888'],
                     allow_websocket_origin=[notebook_url])
+    server.add_host('127.0.0.1:%d' % server.port)
     server.start()
     script = autoload_server(model=None, url='http://127.0.0.1:%d' % server.port)
     display(HTML(_server_cell(server, script)))

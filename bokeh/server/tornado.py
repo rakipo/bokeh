@@ -315,6 +315,13 @@ class BokehTornado(TornadoApplication):
                                                    path_versioner=StaticHandler.append_version)
         return self._resources[root_url]
 
+    def add_hosts(self, hosts):
+        ''' Extend the set of allowable hosts after initialization.
+
+        '''
+        self._hosts.update(hosts)
+        log.debug("NEW allowed Host headers: %r", list(self._hosts))
+
     def start(self):
         ''' Start the Bokeh Server application.
         '''
