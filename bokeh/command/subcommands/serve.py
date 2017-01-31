@@ -171,6 +171,28 @@ Then the application will be served under the following URL:
 
     http://localhost:{DEFAULT_PORT}/foobar/app_script
 
+By default, Bokeh server provides absolute URLs for loading JavaScript and
+CSS resources. For example:
+
+.. code-block:: none
+
+    http://localhost:{DEFAULT_PORT}/static/js/bokeh.min.js
+
+In some more sophisticated deployment scenarios (e.g. behind
+a port mapping proxy) it may be preferable or necessary to load resources
+from a relative URL:
+
+. code-block:: none
+
+    static/js/bokeh.min.js
+
+To have the Bokeh server provide resources as relative URSL, add
+the ``--relative-resource-urls`` flag when the server is started:
+
+.. code-block:: sh
+
+    bokeh serve app_script.py --relative-resource-urls
+
 If needed, Bokeh server can send keep-alive pings at a fixed interval.
 To configure this feature, set the ``--keep-alive`` option:
 
@@ -426,6 +448,11 @@ class Serve(Subcommand):
             default=None,
         )),
 
+        ('--relative-resource-urls', dict(
+            action = 'store_true',
+            help="Whether resource URLs should be provided as relative URLS",
+        )),
+
         ('--keep-alive', dict(
             metavar='MILLISECONDS',
             type=int,
@@ -532,7 +559,8 @@ class Serve(Subcommand):
                                                               'check_unused_sessions_milliseconds',
                                                               'unused_session_lifetime_milliseconds',
                                                               'stats_log_frequency_milliseconds',
-                                                              'use_xheaders'
+                                                              'use_xheaders',
+                                                              'relative_resource_urls',
                                                             ]
                           if getattr(args, key, None) is not None }
 

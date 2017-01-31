@@ -95,7 +95,9 @@ class Server(object):
                                                         'keep_alive_milliseconds',
                                                         'check_unused_sessions_milliseconds',
                                                         'unused_session_lifetime_milliseconds',
-                                                        'stats_log_frequency_milliseconds']
+                                                        'stats_log_frequency_milliseconds',
+                                                        'relative_resource_urls',
+                                                        ]
                            if key in kwargs }
 
         prefix = kwargs.get('prefix')

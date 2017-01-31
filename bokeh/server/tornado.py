@@ -158,6 +158,7 @@ class BokehTornado(TornadoApplication):
                  unused_session_lifetime_milliseconds=15000,
                  # how often to log stats
                  stats_log_frequency_milliseconds=15000,
+                 relative_resource_urls=False,
                  use_index=True,
                  redirect_root=True):
 
@@ -179,6 +180,7 @@ class BokehTornado(TornadoApplication):
 
         self._hosts = set(hosts)
         self._websocket_origins = self._hosts | set(extra_websocket_origins)
+        self._relative_resource_urls = relative_resource_urls
         self._resources = {}
         self._secret_key = secret_key
         self._sign_sessions = sign_sessions
@@ -308,7 +310,7 @@ class BokehTornado(TornadoApplication):
         return protocol + "://" + request.host + websocket_path
 
     def resources(self, request):
-        root_url = self.root_url_for_request(request)
+        root_url = "" if self._relative_resource_urls else self.root_url_for_request(request)
         if root_url not in self._resources:
             self._resources[root_url] =  Resources(mode="server",
                                                    root_url=root_url,

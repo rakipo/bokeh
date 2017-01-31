@@ -104,6 +104,11 @@ def test_args():
             default=None,
         )),
 
+        ('--relative-resource-urls', dict(
+            action = 'store_true',
+            help="Whether resource URLs should be provided as relative URLS",
+        )),
+
         ('--keep-alive', dict(
             metavar='MILLISECONDS',
             type=int,
