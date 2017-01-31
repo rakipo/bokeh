@@ -114,7 +114,7 @@ class TestResources(unittest.TestCase):
             'type': 'warn'}
         ])
 
-    def test_server(self):
+    def test_server_default(self):
         r = resources.Resources(mode="server")
         self.assertEqual(r.mode, "server")
         self.assertEqual(r.dev, False)
@@ -122,12 +122,33 @@ class TestResources(unittest.TestCase):
         self.assertEqual(r.js_raw, [DEFAULT_LOG_JS_RAW])
         self.assertEqual(r.css_raw, [])
         self.assertEqual(r.messages, [])
+        self.assertEqual(r.js_files, ['http://localhost:5006/static/js/bokeh.min.js',
+                                      'http://localhost:5006/static/js/bokeh-widgets.min.js'])
+        self.assertEqual(r.css_files, ['http://localhost:5006/static/css/bokeh.min.css',
+                                       'http://localhost:5006/static/css/bokeh-widgets.min.css'])
 
+    def test_server_root_url(self):
         r = resources.Resources(mode="server", root_url="http://foo/")
 
         self.assertEqual(r.js_raw, [DEFAULT_LOG_JS_RAW])
         self.assertEqual(r.css_raw, [])
         self.assertEqual(r.messages, [])
+        self.assertEqual(r.js_files, ['http://foo/static/js/bokeh.min.js',
+                                      'http://foo/static/js/bokeh-widgets.min.js'])
+        self.assertEqual(r.css_files, ['http://foo/static/css/bokeh.min.css',
+                                       'http://foo/static/css/bokeh-widgets.min.css'])
+
+    def test_server_root_url_empty(self):
+        r = resources.Resources(mode="server", root_url="")
+
+        self.assertEqual(r.js_raw, [DEFAULT_LOG_JS_RAW])
+        self.assertEqual(r.css_raw, [])
+        self.assertEqual(r.messages, [])
+        self.assertEqual(r.js_files, ['static/js/bokeh.min.js',
+                                      'static/js/bokeh-widgets.min.js'])
+        self.assertEqual(r.css_files, ['static/css/bokeh.min.css',
+                                       'static/css/bokeh-widgets.min.css'])
+
 
     def test_server_with_versioner(self):
         def versioner(path):
