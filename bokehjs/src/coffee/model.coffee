@@ -1,7 +1,7 @@
-import * as _ from "underscore"
 import {HasProps} from "./core/has_props"
 import {BokehView} from "./core/bokeh_view"
 import * as p from "./core/properties"
+import {isString} from "./core/util/types"
 
 export {BokehView as View}
 
@@ -23,7 +23,7 @@ export class Model extends HasProps
   select: (selector) ->
     if selector.prototype instanceof Model
       @references().filter((ref) -> ref instanceof selector)
-    else if _.isString(selector)
+    else if isString(selector)
       @references().filter((ref) -> ref.name == selector)
     else
       throw new Error("invalid selector")

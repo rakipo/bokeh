@@ -1,14 +1,18 @@
+''' Provide functions and classes to help with various JS and CSS compilation.
+
+'''
 from __future__ import absolute_import
 
 import logging
 logger = logging.getLogger(__name__)
 
 import io
+import os
+import sys
 import six
 import json
-import inspect
 import hashlib
-from os.path import dirname, join, abspath, exists
+from os.path import dirname, join, abspath, exists, isabs
 from subprocess import Popen, PIPE
 
 from ..model import Model
@@ -78,11 +82,16 @@ _module_template = \
 """"%(module)s": [function(require, module, exports) {\n%(code)s\n}, %(deps)s]"""
 
 class AttrDict(dict):
+    ''' Provide a dict subclass that supports access by named attributes.
+
+    '''
     def __getattr__(self, key):
         return self[key]
 
 class CompilationError(RuntimeError):
+    ''' A RuntimeError subclass for reporting JS compilation errors.
 
+    '''
     def __init__(self, error):
         super(CompilationError, self).__init__()
         self.line = error.get("line")
@@ -113,40 +122,49 @@ def _detect_nodejs():
         return None
 
 _nodejs = _detect_nodejs()
+_npmjs = None if _nodejs is None else join(dirname(_nodejs), "npm")
 
-def _run_nodejs(script, input):
+def _run(app, argv, input=None):
     if _nodejs is None:
         raise RuntimeError('node.js is needed to allow compilation of custom models ' +
                            '("conda install -c bokeh nodejs" or follow https://nodejs.org/en/download/)')
 
-    proc = Popen([_nodejs, script], stdout=PIPE, stderr=PIPE, stdin=PIPE)
-    (stdout, errout) = proc.communicate(input=json.dumps(input).encode())
+    proc = Popen([app] + argv, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+    (stdout, errout) = proc.communicate(input=None if input is None else json.dumps(input).encode())
 
-    if len(errout) > 0:
+    if proc.returncode != 0:
         raise RuntimeError(errout)
     else:
-        return AttrDict(json.loads(stdout.decode()))
+        return stdout.decode('utf-8')
 
-def _run_npm(argv):
-    if _nodejs is None:
-        raise RuntimeError('node.js is needed to allow compilation of custom models ' +
-                           '("conda install -c bokeh nodejs" or follow https://nodejs.org/en/download/)')
+def _run_nodejs(argv, input=None):
+    return _run(_nodejs, argv, input)
 
-    _npm = join(dirname(_nodejs), "npm")
-    proc = Popen([_npm] + argv, stdout=PIPE, stderr=PIPE, stdin=PIPE)
-    (_stdout, errout) = proc.communicate()
+def _run_npmjs(argv, input=None):
+    return _run(_npmjs, argv, input)
 
-    if len(errout) > 0:
-        raise RuntimeError(errout)
-    else:
+def _version(run_app):
+    try:
+        version = run_app(["--version"])
+    except RuntimeError:
         return None
+    else:
+        return version.strip()
+
+def nodejs_version():
+    return _version(_run_nodejs)
+
+def npmjs_version():
+    return _version(_run_npmjs)
 
 def nodejs_compile(code, lang="javascript", file=None):
     compilejs_script = join(bokehjs_dir, "js", "compile.js")
-    return _run_nodejs(compilejs_script, dict(code=code, lang=lang, file=file))
+    output = _run_nodejs([compilejs_script], dict(code=code, lang=lang, file=file))
+    return AttrDict(json.loads(output))
 
 class Implementation(object):
-    pass
+
+    file = None
 
 class Inline(Implementation):
 
@@ -196,6 +214,7 @@ class FromFile(Implementation):
         if self.file.endswith((".css", ".less")):
             return "less"
 
+#: recognized extensions that can be compiled
 exts = (".coffee", ".ts", ".tsx", ".js", ".css", ".less")
 
 class CustomModel(object):
@@ -213,11 +232,23 @@ class CustomModel(object):
 
     @property
     def file(self):
-        return abspath(inspect.getfile(self.cls))
+        module = sys.modules[self.cls.__module__]
+
+        if hasattr(module, "__file__"):
+            return abspath(module.__file__)
+        else:
+            return None
 
     @property
     def path(self):
-        return dirname(self.file)
+        path = getattr(self.cls, "__base_path__", None)
+
+        if path is not None:
+            return path
+        elif self.file is not None:
+            return dirname(self.file)
+        else:
+            return os.getcwd()
 
     @property
     def implementation(self):
@@ -225,7 +256,7 @@ class CustomModel(object):
 
         if isinstance(impl, six.string_types):
             if "\n" not in impl and impl.endswith(exts):
-                impl = FromFile(join(self.path, impl))
+                impl = FromFile(impl if isabs(impl) else join(self.path, impl))
             else:
                 impl = CoffeeScript(impl)
 
@@ -272,7 +303,7 @@ def gen_custom_models_static():
 
     if dependencies:
         dependencies = sorted(dependencies, key=lambda name_version: name_version[0])
-        _run_npm(["install"] + [ name + "@" + version for (name, version) in dependencies ])
+        _run_npmjs(["install", "--no-progress"] + [ name + "@" + version for (name, version) in dependencies ])
 
     for model in ordered_models:
         impl = model.implementation

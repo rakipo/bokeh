@@ -1,10 +1,9 @@
-import * as _ from "underscore"
-
-import {Glyph, GlyphView} from "./glyph"
+import {XYGlyph, XYGlyphView} from "./xy_glyph"
 import {LinearColorMapper} from "../mappers/linear_color_mapper"
 import * as p from "../../core/properties"
+import {max, concat} from "../../core/util/array"
 
-export class ImageView extends GlyphView
+export class ImageView extends XYGlyphView
 
   initialize: (options) ->
     super(options)
@@ -15,9 +14,6 @@ export class ImageView extends GlyphView
     if @image_data?
       @_set_data()
       @renderer.plot_view.request_render()
-
-  _index_data: () ->
-    @_xy_index()
 
   _set_data: () ->
     if not @image_data? or @image_data.length != @_image.length
@@ -30,22 +26,29 @@ export class ImageView extends GlyphView
       @_height = new Array(@_image.length)
 
     for i in [0...@_image.length]
-      if @_rows?
-        @_height[i] = @_rows[i]
-        @_width[i] = @_cols[i]
+      shape = []
+      if @_image_shape?
+        shape = @_image_shape[i]
+
+      if shape.length > 0
+        img = @_image[i]
+        @_height[i] = shape[0]
+        @_width[i] = shape[1]
       else
+        img = concat(@_image[i])
         @_height[i] = @_image[i].length
         @_width[i] = @_image[i][0].length
-      canvas = document.createElement('canvas')
-      canvas.width = @_width[i]
-      canvas.height = @_height[i]
+
+      if @image_data[i]? and @image_data[i].width == @_width[i] and @image_data[i].height == @_height[i]
+        canvas = @image_data[i]
+      else
+        canvas = document.createElement('canvas')
+        canvas.width = @_width[i]
+        canvas.height = @_height[i]
+
       ctx = canvas.getContext('2d')
       image_data = ctx.getImageData(0, 0, @_width[i], @_height[i])
       cmap = @model.color_mapper
-      if @_rows?
-        img = @_image[i]
-      else
-        img = _.flatten(@_image[i])
       buf = cmap.v_map_screen(img, true)
       buf8 = new Uint8Array(buf)
       image_data.data.set(buf8)
@@ -54,11 +57,10 @@ export class ImageView extends GlyphView
 
       @max_dw = 0
       if @_dw.units == "data"
-        @max_dw = _.max(@_dw)
+        @max_dw = max(@_dw)
       @max_dh = 0
       if @_dh.units == "data"
-        @max_dh = _.max(@_dh)
-      @_xy_index()
+        @max_dh = max(@_dh)
 
   _map_data: () ->
     switch @model.properties.dw.units
@@ -92,24 +94,19 @@ export class ImageView extends GlyphView
     ctx.setImageSmoothingEnabled(old_smoothing)
 
   bounds: () ->
-    d = @index.data
-    return {
-      minX: d.minX,
-      minY: d.minY,
-      maxX: d.maxX + @max_dw,
-      maxY: d.maxY + @max_dh
-    }
+    bbox = @index.bbox
+    bbox.maxX += @max_dw
+    bbox.maxY += @max_dh
+    return bbox
 
 # NOTE: this needs to be redefined here, because palettes are located in bokeh-api.js bundle
 Greys9 = () -> [0x000000, 0x252525, 0x525252, 0x737373, 0x969696, 0xbdbdbd, 0xd9d9d9, 0xf0f0f0, 0xffffff]
 
-export class Image extends Glyph
+export class Image extends XYGlyph
   default_view: ImageView
 
   type: 'Image'
 
-  @coords [['x', 'y']]
-  @mixins []
   @define {
       image:        [ p.NumberSpec       ] # TODO (bev) array spec?
       dw:           [ p.DistanceSpec     ]

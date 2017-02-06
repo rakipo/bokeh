@@ -28,7 +28,6 @@ from .model import Model, _ModelInDocument, _ModelInEmptyDocument
 from .resources import BaseResources, _SessionCoordinates, EMPTY
 from .util.string import encode_utf8
 from .util.serialization import make_id
-from .util.deprecation import deprecated
 
 def _indent(text, n=2):
     return "\n".join([ " "*n + line for line in text.split("\n") ])
@@ -50,7 +49,7 @@ def _wrap_in_onload(code):
 })();
 """ % dict(code=_indent(code, 4))
 
-def components(models, resources=None, wrap_script=True, wrap_plot_info=True):
+def components(models, wrap_script=True, wrap_plot_info=True):
     '''
     Return HTML components to embed a Bokeh plot. The data for the plot is
     stored directly in the returned HTML.
@@ -64,9 +63,6 @@ def components(models, resources=None, wrap_script=True, wrap_plot_info=True):
     Args:
         models (Model|list|dict|tuple) :
             A single Model, a list/tuple of Models, or a dictionary of keys and Models.
-
-        resources :
-            Deprecated argument
 
         wrap_script (boolean, optional) :
             If True, the returned javascript is wrapped in a script tag.
@@ -120,10 +116,6 @@ def components(models, resources=None, wrap_script=True, wrap_plot_info=True):
             # => (javascript, {"Plot 1": plot1_dict, "Plot 2": plot2_dict})
 
     '''
-    if resources is not None:
-        deprecated('Because the ``resources`` argument is no longer needed, '
-                   'it is deprecated and no longer has any effect.')
-
     # 1) Convert single items and dicts into list
 
     was_single_object = isinstance(models, Model) or isinstance(models, Document)
@@ -616,7 +608,8 @@ def server_html_page_for_models(session_id, model_ids, resources, title, websock
     bundle = _bundle_for_objs_and_resources(None, resources)
     return _html_page_for_render_items(bundle, {}, render_items, title, template=template, websocket_url=websocket_url)
 
-def server_html_page_for_session(session_id, resources, title, websocket_url, template=FILE):
+def server_html_page_for_session(session_id, resources, title, websocket_url, template=FILE,
+                                 template_variables=None):
     elementid = make_id()
     render_items = [{
         'sessionid' : session_id,
@@ -625,5 +618,9 @@ def server_html_page_for_session(session_id, resources, title, websocket_url, te
         # no 'modelid' implies the entire session document
     }]
 
+    if template_variables is None:
+        template_variables = {}
+
     bundle = _bundle_for_objs_and_resources(None, resources)
-    return _html_page_for_render_items(bundle, {}, render_items, title, template=template, websocket_url=websocket_url)
+    return _html_page_for_render_items(bundle, {}, render_items, title, template=template,
+            websocket_url=websocket_url, template_variables=template_variables)

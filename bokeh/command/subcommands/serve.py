@@ -85,7 +85,7 @@ argument:
 
 .. code-block:: sh
 
-    bokeh serve app_script.py --port=8080
+    bokeh serve app_script.py --port 8080
 
 To listen on an arbitrary port, pass ``0`` as the port number.  The actual
 port number will be logged at startup.
@@ -95,7 +95,7 @@ Similarly, a specific network address can be specified with the
 
 .. code-block:: sh
 
-    bokeh serve app_script.py --address=0.0.0.0
+    bokeh serve app_script.py --address 0.0.0.0
 
 will have the Bokeh server listen all available network addresses.
 
@@ -120,7 +120,7 @@ wildcard:
 
 .. code-block:: sh
 
-    bokeh serve app_script.py --address=0.0.0.0 --host='*'
+    bokeh serve app_script.py --address 0.0.0.0 --host '*'
 
 Using the wildcard can be helpful when testing applications that are deployed
 with cloud orchestration tools and when the public endpoint is not known ahead
@@ -163,7 +163,7 @@ This can often be useful in conjunction with "reverse proxy" setups.
 
 .. code-block:: sh
 
-    bokeh serve app_script.py --prefix=foobar
+    bokeh serve app_script.py --prefix foobar
 
 Then the application will be served under the following URL:
 
@@ -222,7 +222,7 @@ argument:
 
 .. code-block:: sh
 
-    bokeh serve app_script.py --session-ids=signed
+    bokeh serve app_script.py --session-ids signed
 
 The available modes are: {SESSION_ID_MODES}
 
@@ -305,7 +305,7 @@ The logging level can be controlled by the ``--log-level`` argument:
 
 .. code-block:: sh
 
-    bokeh serve app_script.py --log-level=debug
+    bokeh serve app_script.py --log-level debug
 
 The available log levels are: {LOGLEVELS}
 
@@ -313,7 +313,7 @@ The log format can be controlled by the ``--log-format`` argument:
 
 .. code-block:: sh
 
-    bokeh serve app_script.py --log-format="%(levelname)s: %(message)s"
+    bokeh serve app_script.py --log-format "%(levelname)s: %(message)s"
 
 The default log format is ``"{DEFAULT_LOG_FORMAT}"``
 
@@ -352,7 +352,7 @@ base_serve_args = (
         metavar = 'PORT',
         type    = int,
         help    = "Port to listen on",
-        default = None
+        default = DEFAULT_SERVER_PORT
     )),
 
     ('--address', dict(
@@ -532,7 +532,7 @@ class Serve(Subcommand):
                                                               'check_unused_sessions_milliseconds',
                                                               'unused_session_lifetime_milliseconds',
                                                               'stats_log_frequency_milliseconds',
-                                                              'use_xheaders',
+                                                              'use_xheaders'
                                                             ]
                           if getattr(args, key, None) is not None }
 
